@@ -129,6 +129,7 @@ dependencies:
     - tensorboard-plugin-wit==1.8.1
     - tifffile==2021.11.2
     - torch==1.10.1
+    - wandb==0.13.10
     - wcwidth==0.2.5
     - werkzeug==2.0.2
     - zipp==3.10.0
