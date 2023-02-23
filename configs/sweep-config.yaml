@@ -1,0 +1,10 @@
+program: main.py
+method: grid
+metric:
+  name: rollout/ep_rew_mean
+  goal: maximize
+parameters:
+  directionality:
+    values: ["bidirectional"]
+  seed:
+    values: [4089113149, 3989343303, 259954264, 1205178002, 2140537296, 2678383410, 4093963723, 2872110071, 2503290290, 2182919691]

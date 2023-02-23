@@ -2,7 +2,8 @@ from utils import make_maze_env, make_dmlab_env, make_miniworld_env, make_minigr
 import torch
 import os
 import uuid
-from stable_baselines3.common.vec_env import VecMonitor, VecNormalize, DummyVecEnv
+from stable_baselines3.common.vec_env import VecMonitor, VecNormalize, DummyVecEnv, VecVideoRecorder
+from wandb.integration.sb3 import WandbCallback
 
 
 class Experiment:
@@ -29,6 +30,7 @@ class Experiment:
         elif 'MiniGrid' in self.config['env']:
             env = DummyVecEnv([make_minigrid_env(self.config['env']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
+            env = VecVideoRecorder(env, f"{self.outpath}/video", record_video_trigger=lambda x: x % 100 == 0, video_length=200)
         elif 'MiniWorld' in self.config['env']:
             env = DummyVecEnv([make_miniworld_env(self.config['env']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
@@ -73,6 +75,11 @@ class Experiment:
                         adv_norm=self.config.get('adv_norm', False),
                         save_ckpt=self.config.get('save_ckpt', False))
 
-        model.learn(total_timesteps=self.config['n_steps'], eval_log_path=self.outpath)
+        model.learn(
+            total_timesteps=self.config['n_steps'],
+            eval_log_path=self.outpath,
+            callback=WandbCallback()
+        )
+
 
         env.close()
