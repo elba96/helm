@@ -30,7 +30,7 @@ class Experiment:
         elif 'MiniGrid' in self.config['env']:
             env = DummyVecEnv([make_minigrid_env(self.config['env']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
-            env = VecVideoRecorder(env, f"{self.outpath}/video", record_video_trigger=lambda x: x % 100 == 0, video_length=200)
+            env = VecVideoRecorder(env, f"{self.outpath}/video", record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
         elif 'MiniWorld' in self.config['env']:
             env = DummyVecEnv([make_miniworld_env(self.config['env']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)

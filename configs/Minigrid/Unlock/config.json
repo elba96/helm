@@ -3,7 +3,7 @@
     "clip_range_vf": null,
     "n_batches": 8,
     "batch_size": 256,
-    "beta": null,
+    "beta": 1,
     "beta_lr": 0.001,
     "beta_schedule": "none",
     "clip_range": 0.2,
