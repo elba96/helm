@@ -564,32 +564,23 @@ class RecurrentRolloutBuffer(BaseBuffer):
 
 
 class FIFOTensor():
-    def __init__(self, size, cls_token, sep_token, device=th.device("cpu")):
+    def __init__(self, size, cls_token, device=th.device("cpu")):
         super().__init__()
         self._bs, self._len, *_ = size
         self.data = th.zeros(size=size, device=device)
         assert cls_token.shape == th.Size([*_]), f"CLS Token must be size {[*_]} but is {list(cls_token.shape)}"
-        assert sep_token.shape == th.Size([*_]), f"CLS Token must be size {[*_]} but is {list(sep_token.shape)}"
         self.cls_token = cls_token
-        self.sep_token = sep_token
         self.data[:, 0, :] = self.cls_token
         self.shape = torch.Size(size)
         self._idx = 1
 
     def push(self, new_obs):
-        if self._idx < (self._len - 1):
+        if self._idx < self._len:
             self.data[:, self._idx, :] = new_obs
-            self.data[:, self._idx + 1, :] = self.sep_token
-            self._idx += 2
+            self._idx += 1
         else:
-            self.data[:, 1:, :] = th.roll(self.data[:, 1:, :], -2, 1)
-            if self._len % 2 == 0:
-                self.data[:, -3, :] = new_obs
-                self.data[:, -2, :] = self.sep_token
-                self.data[:, -1, :] = 0.
-            else:
-                self.data[:, -2, :] = new_obs
-                self.data[:, -1, :] = self.sep_token
+            self.data[:, 1:, :] = th.roll(self.data[:, 1:, :], -1, 1)
+            self.data[:, -1, :] = new_obs
 
     def __getitem__(self, item):
         return self.data[item]
