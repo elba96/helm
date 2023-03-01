@@ -78,7 +78,7 @@ class Experiment:
         model.learn(
             total_timesteps=self.config['n_steps'],
             eval_log_path=self.outpath,
-            callback=WandbCallback()
+            callback=WandbCallback() if self.config["wandb_log"] else None
         )
 
 
