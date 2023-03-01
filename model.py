@@ -107,8 +107,9 @@ class FrozenHopfield(nn.Module):
 
 class HELM(nn.Module):
     def __init__(self, action_space, input_dim, optimizer, learning_rate, epsilon=1e-8, mem_len=511, beta=1,
-                 device='cuda'):
+                 device='cuda', bidirectional=True):
         super(HELM, self).__init__()
+        self.bidirectional = bidirectional
         self.device = device
         config = BertConfig()
         self.mem_len = mem_len
@@ -151,9 +152,18 @@ class HELM(nn.Module):
         obs_query = self.query_encoder(observations)
         vocab_encoding = self.frozen_hopfield.forward(observations)
         self.memory.push(vocab_encoding)
+        attention_mask = (self.memory.data != 0).float().mean(dim=2).to(self.device)
+        if not self.bidirectional:
+            curr_seq_len = attention_mask.sum(dim=-1).int()
+            attention_mask = torch.zeros((bs, self.mem_len, self.mem_len)).to(self.device)
+            for idx in range(bs):
+                attention_mask[idx, :curr_seq_len[idx], :curr_seq_len[idx]] = 1.
+            tril = torch.tril(torch.ones((self.mem_len, self.mem_len), device=self.device)).unsqueeze(0).expand(bs, -1, -1)
+            attention_mask *= tril
+
         out = self.model(
             inputs_embeds=self.memory.data,
-            attention_mask=(self.memory.data != 0).float().mean(dim=2).to(self.device),
+            attention_mask=attention_mask,
             position_ids=torch.arange(self.memory.shape[1], dtype=torch.long, device=self.device).repeat(bs, 1),
             token_type_ids=torch.zeros((self.memory.shape[:2]), dtype=torch.long, device=self.device),
             output_hidden_states=True

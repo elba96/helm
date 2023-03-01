@@ -218,7 +218,8 @@ class HELMPPO(OnPolicyAlgorithm):
                                             gamma=gamma, gae_lambda=gae_lambda, n_envs=n_envs, hidden_dim=768)
 
         self.policy = HELM(env.action_space, self.observation_space.shape, self.config['optimizer'],
-                           self.config['learning_rate'], beta=self.config['beta'], device=self.device).to(self.device)
+                           self.config['learning_rate'], beta=self.config['beta'], device=self.device,
+                           bidirectional=self.config["bidirectional"]).to(self.device)
 
     def _set_seed(self, seed: int) -> None:
         """
@@ -446,7 +447,6 @@ class HELMPPO(OnPolicyAlgorithm):
             self._last_mems = FIFOTensor(
                 size=(self.n_envs, self.policy.mem_len, self.policy.model.config.hidden_size),
                 cls_token=self.policy.model.embeddings.word_embeddings.weight[101],  # 'CLS'
-                sep_token=self.policy.model.embeddings.word_embeddings.weight[102],  # 'SEP'
                 device=self.device
             )
 

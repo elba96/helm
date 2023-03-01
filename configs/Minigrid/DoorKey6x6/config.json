@@ -31,6 +31,7 @@
     "epsilon": 1e-08,
     "vf_coef": 0.5,
     "seed": null,
-    "wandb_log": true,
-    "monitor_gym": true
+    "wandb_log": false,
+    "monitor_gym": false,
+    "bidirectional": true
 }

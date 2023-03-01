@@ -32,5 +32,6 @@
     "vf_coef": 0.5,
     "seed": null,
     "wandb_log": false,
-    "monitor_gym": false
+    "monitor_gym": false,
+    "bidirectional": true
 }
