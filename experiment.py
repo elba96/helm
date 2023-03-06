@@ -27,13 +27,21 @@ class Experiment:
         if 'RandomMaze' in self.config['env']:
             env = DummyVecEnv([make_maze_env() for _ in range(self.config['n_envs'])])
             env = VecMonitor(env)
+            if self.config["monitor_gym"]:
+                env = VecVideoRecorder(env, os.path.join(self.outpath, "video"),
+                                       record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
         elif 'MiniGrid' in self.config['env']:
             env = DummyVecEnv([make_minigrid_env(self.config['env']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
-            env = VecVideoRecorder(env, f"{self.outpath}/video", record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
+            if self.config["monitor_gym"]:
+                env = VecVideoRecorder(env, os.path.join(self.outpath, "video"),
+                                       record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
         elif 'MiniWorld' in self.config['env']:
             env = DummyVecEnv([make_miniworld_env(self.config['env']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
+            if self.config["monitor_gym"]:
+                env = VecVideoRecorder(env, os.path.join(self.outpath, "video"),
+                                       record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
         else:
             # create procgen environment
             env = make_procgen_env(id=self.config['env'], num_envs=self.config['n_envs'], num_levels=0)
