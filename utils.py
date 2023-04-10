@@ -104,7 +104,7 @@ class MiniWorldWrapper(gym.Wrapper):
 
 
 def make_miniworld_env(id: str):
-    import gym_miniworld
+    import miniworld
     import gymnasium
 
     def _init():
