@@ -12,7 +12,7 @@
     "ent_coef": 0.001,
     "ent_decay": "none",
     "ent_decay_factor": 0.99,
-    "env": "MiniWorld-PickupObjs-v0",
+    "env": "MiniWorld-PickupObjects-v0",
     "epsilon": 1e-08,
     "gae_lambda": 0.99,
     "gamma": 0.99,
