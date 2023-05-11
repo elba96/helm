@@ -88,13 +88,13 @@ class MiniWorldWrapper(gym.Wrapper):
             self.observation_space = gym.spaces.Box(shape=(shape[-1], *shape[:-1]), low=0, high=255)
 
     def reset(self):
-        obs = self.env.reset()[0]
+        obs = self.env.reset()
         if isinstance(obs, dict):
             obs = obs['obs']
         return obs.transpose(2, 0, 1)
 
     def step(self, action):
-        obs, rew, done, _, info = self.env.step(action)
+        obs, rew, done, info = self.env.step(action)
         if isinstance(obs, dict):
             obs = obs['obs']
         return obs.transpose(2, 0, 1), rew, done, info
@@ -104,11 +104,10 @@ class MiniWorldWrapper(gym.Wrapper):
 
 
 def make_miniworld_env(id: str):
-    import miniworld
-    import gymnasium
+    import gym_miniworld
 
     def _init():
-        env = gymnasium.make(id)
+        env = gym.make(id)
         env = MiniWorldWrapper(env)
         return env
 
