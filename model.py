@@ -260,10 +260,11 @@ class HELMv2(nn.Module):
 
 class SHELM(nn.Module):
     def __init__(self, action_space, input_dim, optimizer, learning_rate, env_id, topk=1, epsilon=1e-8, mem_len=511,
-                 clip_encoder='ViT-B/16', device='cuda'):
+                 n_layer=18, clip_encoder='ViT-B/16', device='cuda'):
         super(SHELM, self).__init__()
         config = TransfoXLConfig()
         config.mem_len = mem_len
+        config.n_layer = n_layer
         self.mem_len = config.mem_len
 
         self.model = TransfoXLModel.from_pretrained('transfo-xl-wt103', config=config)

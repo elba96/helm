@@ -220,7 +220,7 @@ class SHELMPPO(OnPolicyAlgorithm):
 
         self.policy = SHELM(env.action_space, self.observation_space.shape, self.config['optimizer'],
                             self.config['learning_rate'], self.config['env'], self.config['topk'],
-                            device=self.device).to(self.device)
+                            n_layer=self.config['n_layer'], device=self.device).to(self.device)
 
     def _set_seed(self, seed: int) -> None:
         """

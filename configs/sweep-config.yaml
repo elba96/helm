@@ -4,7 +4,7 @@ metric:
   name: rollout/ep_rew_mean
   goal: maximize
 parameters:
-  bidirectional:
-    values: [true, false]
+  n_layer:
+    values: [15, 10, 5, 3, 1]
   seed:
-    values: [4089113149, 3989343303, 259954264, 1205178002, 2140537296, 2678383410, 4093963723, 2872110071, 2503290290, 2182919691]
+    values: [4089113149, 3989343303, 259954264, 1205178002, 2140537296]
