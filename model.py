@@ -342,8 +342,8 @@ class SHELM(nn.Module):
             observations = observations.unsqueeze(1)
         out = self.model(inputs_embeds=observations, output_hidden_states=True, mems=self.memory)
         self.memory = out.mems
-        hidden = out.last_hidden_state[:, -1, :]
-        hiddens = out.last_hidden_state[:, -1, :].cpu().numpy()
+        hidden = torch.tanh(out.last_hidden_state[:, -1, :])
+        hiddens = torch.tanh(out.last_hidden_state[:, -1, :]).cpu().numpy()
 
         hidden = torch.cat([hidden, obs_query], dim=-1)
 
