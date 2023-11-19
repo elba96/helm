@@ -267,7 +267,13 @@ class SHELM(nn.Module):
         config.n_layer = n_layer
         self.mem_len = config.mem_len
 
+        donor_conf = TransfoXLConfig()
+        donor_conf.mem_len = mem_len
+        donor_model = TransfoXLModel.from_pretrained('transfo-xl-wt103', config=donor_conf)
+
         self.model = TransfoXLModel.from_pretrained('transfo-xl-wt103', config=config)
+        self.model.layers[-1] = donor_model.layers[-1]
+        del donor_model
         self.clip_tokenizer = SimpleTokenizer()
         self.tokenizer = TransfoXLTokenizer.from_pretrained('transfo-xl-wt103')
         if 'psychlab' in env_id:
