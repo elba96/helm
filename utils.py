@@ -130,7 +130,7 @@ class DeepMindLabEnvironment(dm_env.Environment):
         # seekavoid_arena_01 is not part of dmlab30.
         level_name = 'contributed/dmlab30/{}'.format(level_name)
 
-        self._lab = deepmind_lab.Lab(level_name, ['RGB_INTERLEAVED'], config)
+        self._lab = deepmind_lab.Lab(level_name, ['RGB_INTERLEAVED'], config, renderer="hardware")
         self._action_repeats = action_repeats
         self._reward = 0
         self._last_done = False
