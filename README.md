@@ -1,189 +1,72 @@
-# History Compression via Language Models in Reinforcement Learning
+# Speeding up Semantic History Compression in Reinforcement Learning
+> An improvement of the original [SHELM](https://github.com/ml-jku/helm) implementation which cuts the training time by up to 16% and removes 77% of parameters of the memory component while maintaining original performance.
 
+This repository is the implementation of my Master's Thesis which aims to reduce the computational overhead of the [TrXL](https://huggingface.co/docs/transformers/main/en/model_doc/transfo-xl) used in [SHELM](https://github.com/ml-jku/helm).
+The original codebase of SHELM was forked and extended to support [wandb](https://wandb.ai) logging and the possibility to set the number of layers of the [TrXL](https://huggingface.co/docs/transformers/main/en/model_doc/transfo-xl).
 
-This repository contains the code for the papers:
-- **[History Compression via Language Models in Reinforcement Learning (HELM)](https://arxiv.org/abs/2205.12258)**
-- **[Toward Semantic History Compression for Reinforcement Learning (HELMv2)](https://openreview.net/forum?id=97C6klf5shp)**
-- **[Semantic HELM: An Interpretable Memory for Reinforcement Learning (SHELM)](https://arxiv.org/abs/2306.09312)**
+## Abstract
+Partially observable environments in reinforcement learning are particularly challenging to solve because they require the agent to estimate the true state of the environment by maintaining a memory of past observations. Previous approaches employed LSTMs to achieve this abstraction. In contrast, Semantic History ComprEssion via Language Models in Reinforcement Learning (SHELM) utilises a pre-trained language transformer. It first retrieves language tokens from visual observations, which are then fed into a pre-trained language transformer to compress the past. 
+The use of natural language in this context is based on the behaviour of humans, who also convey information in a compressed form to peers. 
+Moreover, the use of a language model enables humans to check if crucial information entered the memory, increasing the interpretability of the AI agent. SHELM has been proven to deliver state-of-the-art performance in environments that require a memory component to solve. While it has already shown superior sampling efficiency compared to other approaches, a limitation of SHELM remains the time complexity introduced by the use of two large pre-trained transformer models during the rollout phase. 
+In this thesis, we show that retaining only two of the original 18 layers of the pre-trained language transformer results in up to 16% faster training time, while maintaining the original performance. Furthermore, we attempt to explain why this pruned variant still performs on-par with the original SHELM by investigating the dynamics of different layers by looking at the attention weights of the language transformer.
 
-## HELM
+## Research Question
+- How many layers of the [TrXL](https://huggingface.co/docs/transformers/main/en/model_doc/transfo-xl) in SHELM can be pruned before the model performance degrades too much?
+- What is the sweet spot between the number of layers and achieved performance?
+- What are possible explanations for the observed results?
 
-Fabian Paischer<sup>1 2</sup>,
-Thomas Adler<sup>1</sup>,
-Vihang Patil<sup>1</sup>,
-Angela Bitto-Nemling<sup>1 3</sup>,
-Markus Holzleitner<sup>1</sup>,
-Sebastian Lehner<sup>1 2</sup>,
-Hamid Eghbal-zadeh<sup>1</sup>,
-Sepp Hochreiter<sup>1 2 3</sup>
-
-<sup>1</sup> LIT AI Lab, Institute for Machine Learning, Johannes Kepler University Linz, Austria</br>
-<sup>2</sup> ELLIS Unit Linz  
-<sup>3</sup> Institute of Advanced Research in Artificial Intelligence (IARAI)
-
+## Results
+My work shows that a pruned TrXL can maintain the original performance and in certain environments even show better sample efficiency than the original 18-Layer variant.
+Surprisingly, smaller variants with 2 or 3 layers perform better than variants with 5, 10 or 15 layers as shown in the figure below.
+One likely explanation for this are the observed attention patterns of the second layer. This layer seems to capture more relevant information than subsequent layers and thus aid in solving the task in partial observable environments.
+The notebooks for the result visualization and investigation can be found in the [results](./results) section. After download the necessary data with the provided [download script](./results/data/download_results.sh) the jupyter notebooks can be executed.
 
 <p align="center">
-  <img src="figures/helm.png" width="500">
+  <img src="figures/sped-up-shelm-results.png" width="500">
 </p>
 
- 
-HELM leverages pretrained language encoders as a memory component for partially observable environments.
-Thereby, it uses a modern Hopfield Network to map observations to language tokens.
 
-**A detailed blog post on HELM is available at [this link](https://ml-jku.github.io/blog/2022/helm/).**
+The tracked experiments can also be checked out in the corresponding [wandb project](https://wandb.ai/elba/Master-Thesis/table?nw=zglvzydk8v9)
 
+## Reproduce Results
+Please find more details for the installation at the [main repository](https://github.com/ml-jku/helm)
 
-To reproduce the HELM baseline, first clone the repository and install the conda environment by
-
-    git clone https://github.com/ml-jku/helm.git
+    git clone https://github.com/elba96/helm.git
     cd helm
     conda env create -f env.yml
 
-After installing the conda environment you can train HELM on the KeyCorridor environment by
+To run the outlined experiments it is necessary to extract CLIP embeddings first by running:
 
-    python main.py
+    python prepare_embeddings.py
 
-A new directory `./experiments/HELM/MiniGrid-KeyCorridorS3R1-v0` will be created in which all log files and checkpoints will be stored.
+After installing the conda environment you can train HELM on the Memory environment by
+
+    python main.py --config configs/MiniGrid/Memory/SHELM/config.json
+
+A new directory `./experiments/SHELM/MiniGrid-MemoryS11-v0` will be created in which all log files and checkpoints will be stored.
+
+If you wish to also log your experiments in wandb you can do so by
+
+    python main.py --config configs/MiniGrid/Memory/SHELM/config.json --var wandb_api_key=<WANDB_API_KEY> --var wandb_entity=<WANDB_ENTITY> --var wandb_project=<WANDB_PROJECT> --var wandb_log=true
+
 
 All changeable parameters are stored in the `config.json` file and can be adjusted via command line arguments as:
 
     python main.py --var KEY=VALUE
 
-For example, if you would like to train on `RandomMaze-v0`:
-
-    python main.py --var env=RandomMaze-v0
-
-or on the Procgen environment `maze`:
-
-    python main.py --var env=maze
-
-**Note** that by default the Procgen environments are created in the *memory* distribution mode, thus only the six environments 
-as mentioned in the paper can be trained on, all others do not support the *memory* mode.
-By default a Tensorboard log is created.
-
-## HELMv2
-
-Fabian Paischer<sup>1 2</sup>,
-Thomas Adler<sup>1</sup>,
-Markus Hofmarcher<sup>1 2</sup>,
-Andreas Radler <sup>1</sup>,
-Sepp Hochreiter<sup>1 2 3</sup>
-
-<sup>1</sup> LIT AI Lab, Institute for Machine Learning, Johannes Kepler University Linz, Austria</br>
-<sup>2</sup> ELLIS Unit Linz  
-<sup>3</sup> Institute of Advanced Research in Artificial Intelligence (IARAI)
-
-<p align="center">
-  <img src="figures/helmv2.png" width="500">
-</p>
-
-
-HELMv2 replaces the random projection of HELM with a pretrained CLIP encoder.
-Further it employs ad adopted and fixed batchnorm layer to project the visual observations to the language space.
-The mapping to the language space for HELM and HELMv2 are arbitrary, i.e., no semantics are transferred to the language space.
-
-You can find the trainer file for HELMv2 [here](trainers/helmv2_trainer.py).
-
-To reproduce our results on the MiniGrid environments, simply run
-
-    python main.py --var model=HELMv2 --var env=MiniGrid-RedBlueDoors-6x6-v0
-
-To run HELMv2 on the MiniWorld benchmark suite you will first need to install ```gym-miniworld``` from source:
-
-    git clone https://github.com/maximecb/gym-miniworld.git
-    cd gym-miniworld
-    git checkout ff61a67
-    pip3 install -e .
-
-**Note** that it is vital to check out and install the specified commit from source, since the MiniWorld benchmark suite has undergone significant changes ever since.
-Then, to run HELMv2 on MiniWorld simply specify the MiniWorld environment as follows:
-
-    python main.py --var model=HELMv2 --var env=MiniWorld-Sign-v0
+To change the number of layers with which the TrXL should be initialized specify:
     
-You can find a comprehensive list of MiniWorld environments [here](https://github.com/Farama-Foundation/Miniworld/blob/ff61a67678eec7d6ca639abbfe4afeaaab8a11a4/docs/environments.md).
-If you encounter problems for training on MiniWorld (NoSuchDisplayException)
+    python main.py --var n_layer=5
 
-    xvfb-run -a -s "-screen 0 1024x768x24 -ac +extension GLX +render -noreset" python main.py --var model=HELMv2 --var env=MiniWorld-Sign-v0
+For executing the results and investigation notebooks with interactive visualizations you will first have to download the provided data with samples episodes, training results of my experiments and more:
 
-More details regarding troubleshooting can be found [here](https://github.com/Farama-Foundation/Miniworld/blob/ff61a67678eec7d6ca639abbfe4afeaaab8a11a4/docs/troubleshooting.md).
+    cd results/data/
+    ./download_results.sh
 
-If you are interested in the semantic mappings from image to text space introduced in [Toward Semantic History Compression for Reinforcement Learning (HELMv2)](https://openreview.net/forum?id=97C6klf5shp), please also check out [this repo]() which uses these mappings for image-conditioned text generation.
-
-## Semantic HELM
-
-Fabian Paischer<sup>1 2</sup>,
-Thomas Adler<sup>1</sup>,
-Markus Hofmarcher<sup>1 2</sup>,
-Sepp Hochreiter<sup>1 2 3</sup>
-
-<sup>1</sup> LIT AI Lab, Institute for Machine Learning, Johannes Kepler University Linz, Austria </br>
-<sup>2</sup> ELLIS Unit Linz  
-<sup>3</sup> Institute of Advanced Research in Artificial Intelligence (IARAI)
-
-![shelm](figures/shelm.png)
+Afterward you are able to investigate the results in more detail.
 
 
-Semantic HELM utilizes a retrieval mechanism via a pretrained CLIP model to encode an image in the language space.
-Particularly, we use the vocabulary of the CLIP language encoder as our semantic database and augment each token with a set of prompts.
-Then, we retrieve corresponding tokens given a visual observation as input.
-Finally, the text-tokens are fed into the language encoder and represent the memory of an agent.
-The memory module of SHELM is intrinsically interpretable, which allows identifying failure cases and facilitates troubleshooting.
-SHELM significantly outperforms HELM, HELMv2, and Dreamerv2 on environments that are unsolvable without a memory component.
 
----
-
-To run experiments with SHELM, you will need to extract the CLIP embeddings for the different environments first, by running
-
-    python prepare_embeddings.py
-    
-This will store prompt-augmented CLIP embeddings for the different environments, as well as a mapping for tokens appearing in both, the vocabulary of CLIP, and the TrXL in the ```data/``` directory.
-After doing so, you can run SHELM by setting ```--var model=SHELM``` on any of the aforementioned environnments.
-
-In order to reproduce our runs on the Psychlab Continuous Recognition task you will need to download and install [deepmind_lab](https://github.com/deepmind/lab) first.
-Then, you will need to download the dataset contianing the stimuli used by the continuous recognition environment by executing
-
-    cd data/brady_konkle_oliva2008
-    ./download_data.sh
-    
-Finally, set the ```DATASET_PATH``` in ```ENV_DIR/lib/python3.8/site-packages/deepmind_lab/baselab/game_scripts/datasets/brady_konkle_oliva2008.lua``` to the directory containing the images.
-```ENV_DIR``` corresponds to the path of your conda environment.
-Now you can set ```--var env=psychlab_continuous_recognition``` to train on the continuous recognition task.
-
-If you encounter issues while trying to run the psychlab tasks (Failed to connect RL API), you will need to install sdl2 for headless rendering:
-
-    conda install -c conda-forge sdl2
-
-You can find all hyperparameters for our psychlab experiments in the paper.
-
-For running experiments on Avalon we used the official codebase of the Avalon environment, which you can find [here](https://github.com/Avalon-Benchmark/avalon).
-We will also add the code for these experiments soon.
-
----
-
-## Reproduction of Paper results
-
-We added all configs for MiniGrid/MiniWorld/Psychlab experiments in the ```configs``` directory.
-To reproduce a result in the paper, simply load the corresponding config via the ```--config``` command line argument of the ```main.py``` script.
-
----
-
-## Running a trained policy
-
-To run a trained policy make sure to first set the ```--var save_ckpt=1``` argument during training.
-This stores the best checkpoint in the ```experiments``` directory.
-To sample episodes from a trained policy you can then simply execute
-
-    python eval-py --ckpt-path PATH_TO_CKPT_DIR
-
----
-
-## Stay tuned for the next updates
-
-- All results on Psychlab, Avalon, MiniGrid/MiniWorld
-- Visualization of tokens being fed into the memory
-- Support for Avalon environment
-- Support for BERT-style language encoders
-- Inference speedup for HELM-like models
 
 --- 
 
@@ -192,7 +75,7 @@ MIT LICENSE
 
 ---
 
-If you find our papers and code useful, please consider citing HELM,
+If you find this work and code useful, please consider citing HELM,
 
     @InProceedings{paischer2022history,
       title = 	 {History Compression via Language Models in Reinforcement Learning},
