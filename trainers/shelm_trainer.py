@@ -219,7 +219,7 @@ class SHELMPPO(OnPolicyAlgorithm):
 
 
         self.policy = SHELM(env.action_space, self.observation_space.shape, self.config['optimizer'],
-                            self.config['learning_rate'], self.config['env'], self.config['topk'],
+                            self.config['learning_rate'], self.config['env_id'], self.config['topk'],
                             device=self.device, mem_len=self.config['mem_len'],
                             clip_encoder=self.config['clip_encoder'], n_layer=self.config['n_layer']).to(self.device)
 
@@ -239,7 +239,7 @@ class SHELMPPO(OnPolicyAlgorithm):
         th.backends.cudnn.deterministic = True
         th.backends.cudnn.benchmark = False
         self.action_space.seed(seed)
-        if self.env is not None and self.config['env'] not in procgen_envs:
+        if self.env is not None and self.config['env_id'] not in procgen_envs:
             # procgen environments do not support setting the seed that way
             self.env.seed(seed)
 
@@ -461,7 +461,7 @@ class SHELMPPO(OnPolicyAlgorithm):
                 high = env.observation_space.high.reshape(-1)[0]
                 observations = torch.tensor(image_obs / high).float().to(self.device)
                 self.policy.memory = self._last_mems
-                action, value, log_prob, hidden = self.policy(observations)
+                action, value, log_prob, hidden, *_ = self.policy(observations)
                 self._last_mems = self.policy.memory
 
             new_obs, rewards, dones, infos = env.step(action)
@@ -489,7 +489,7 @@ class SHELMPPO(OnPolicyAlgorithm):
             high = env.observation_space.high.reshape(-1)[0]
             observations = torch.tensor(image_obs / high).float().to(self.device)
             self.policy.memory = self._last_mems
-            action, value, log_prob, hidden = self.policy(observations)
+            action, value, log_prob, hidden, *_ = self.policy(observations)
 
         rollout_buffer.compute_returns_and_advantage(last_values=value, dones=self._last_episode_starts)
         callback.on_rollout_end()

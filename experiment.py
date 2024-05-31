@@ -15,7 +15,7 @@ class Experiment:
         else:
             experiment_id = experiment_id
 
-        self.outpath = os.path.join('./experiments', config['model'], config['env'], experiment_id)
+        self.outpath = os.path.join('./experiments', config['model'], config['env_id'], experiment_id)
         os.makedirs(self.outpath, exist_ok=True)
 
     def _create_exp_id(self):
@@ -24,30 +24,30 @@ class Experiment:
     def run(self, seed=None):
 
         # create training environments
-        if 'RandomMaze' in self.config['env']:
+        if 'RandomMaze' in self.config['env_id']:
             env = DummyVecEnv([make_maze_env() for _ in range(self.config['n_envs'])])
             env = VecMonitor(env)
             if self.config["monitor_gym"]:
                 env = VecVideoRecorder(env, os.path.join(self.outpath, "video"),
                                        record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
-        elif 'MiniGrid' in self.config['env']:
-            env = DummyVecEnv([make_minigrid_env(self.config['env']) for _ in range(self.config['n_envs'])])
+        elif 'MiniGrid' in self.config['env_id']:
+            env = DummyVecEnv([make_minigrid_env(self.config['env_id']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
             if self.config["monitor_gym"]:
                 env = VecVideoRecorder(env, os.path.join(self.outpath, "video"),
                                        record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
-        elif 'MiniWorld' in self.config['env']:
-            env = DummyVecEnv([make_miniworld_env(self.config['env']) for _ in range(self.config['n_envs'])])
+        elif 'MiniWorld' in self.config['env_id']:
+            env = DummyVecEnv([make_miniworld_env(self.config['env_id']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
             if self.config["monitor_gym"]:
                 env = VecVideoRecorder(env, os.path.join(self.outpath, "video"),
                                        record_video_trigger=lambda x: x % 1000 == 0, video_length=200)
-        elif 'psychlab' in self.config['env']:
-            env = DummyVecEnv([make_dmlab_env(self.config['env']) for _ in range(self.config['n_envs'])])
+        elif 'psychlab' in self.config['env_id']:
+            env = DummyVecEnv([make_dmlab_env(self.config['env_id']) for _ in range(self.config['n_envs'])])
             env = VecNormalize(VecMonitor(env), norm_reward=True, norm_obs=False, clip_reward=1.)
         else:
             # create procgen environment
-            env = make_procgen_env(id=self.config['env'], num_envs=self.config['n_envs'], num_levels=0)
+            env = make_procgen_env(id=self.config['env_id'], num_envs=self.config['n_envs'], num_levels=0)
 
         assert self.config['model'] in ['SHELM', 'HELMv2', 'HELM', 'Impala-PPO', 'CNN-PPO'], \
             f"Model type {self.config['model']} not recognized!"

@@ -1,7 +1,6 @@
 import torch.nn as nn
 from torch.distributions import Categorical
 from transformers import TransfoXLModel, TransfoXLConfig, TransfoXLTokenizer
-from transformers import BertModel, BertConfig
 import torch
 import numpy as np
 import clip
@@ -106,16 +105,16 @@ class FrozenHopfield(nn.Module):
 
 class HELM(nn.Module):
     def __init__(self, action_space, input_dim, optimizer, learning_rate, epsilon=1e-8, mem_len=511, beta=1,
-                 device='cuda', bidirectional=True):
+                 device='cuda'):
         super(HELM, self).__init__()
-        self.bidirectional = bidirectional
-        self.device = device
-        config = BertConfig()
-        self.mem_len = mem_len
-        self.model = BertModel.from_pretrained("bert-base-uncased", config=config)
-        n_tokens = self.model.embeddings.word_embeddings.num_embeddings
-        word_embs = self.model.embeddings.word_embeddings(torch.arange(n_tokens)).detach().to(device)
-        hidden_dim = self.model.embeddings.word_embeddings.embedding_dim
+        config = TransfoXLConfig()
+        config.mem_len = mem_len
+        self.mem_len = config.mem_len
+
+        self.model = TransfoXLModel.from_pretrained('transfo-xl-wt103', config=config)
+        n_tokens = self.model.word_emb.n_token
+        word_embs = self.model.word_emb(torch.arange(n_tokens)).detach().to(device)
+        hidden_dim = self.model.d_embed
         hopfield_input = np.prod(input_dim[1:])
         self.frozen_hopfield = FrozenHopfield(hidden_dim, hopfield_input, word_embs, beta=beta)
 
@@ -126,7 +125,7 @@ class HELM(nn.Module):
         self.hidden_dim = hidden_dim
 
         self.query_encoder = SmallImpalaCNN(input_dim, channel_scale=4, hidden_dim=hidden_dim)
-        self.out_dim = hidden_dim*2
+        self.out_dim = hidden_dim * 2
         self.actor = DiscreteActor(self.out_dim, 128, action_space.n).apply(orthogonal_init)
         self.critic = nn.Sequential(nn.Linear(self.out_dim, 512),
                                     nn.LayerNorm(512, elementwise_affine=False),
@@ -338,17 +337,20 @@ class SHELM(nn.Module):
         observations, _ = self.get_top_k_toks(observations, self.clip_embs, self.topk)
         if len(observations.shape) == 2:
             observations = observations.unsqueeze(1)
-        out = self.model(inputs_embeds=observations, output_hidden_states=True, mems=self.memory)
+        out = self.model(inputs_embeds=observations, output_hidden_states=True, mems=self.memory, output_attentions=True)
         self.memory = out.mems
         hidden = out.last_hidden_state[:, -1, :]
         hiddens = out.last_hidden_state[:, -1, :].cpu().numpy()
+        hidden_states = out.hidden_states
 
         hidden = torch.cat([hidden, obs_query], dim=-1)
+
+        attentions = out.attentions
 
         action, log_prob = self.actor(hidden, deterministic=deterministic)
         values = self.critic(hidden).squeeze()
 
-        return action.cpu().numpy(), values.cpu().numpy(), log_prob.cpu().numpy().squeeze(), hiddens
+        return action.cpu().numpy(), values.cpu().numpy(), log_prob.cpu().numpy().squeeze(), hiddens, hidden_states, attentions
 
     def evaluate_actions(self, hidden_states, actions, observations):
         if observations.shape[1] != 3:

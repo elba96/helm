@@ -98,9 +98,6 @@ def main():
         os.environ['WANDB_API_KEY'] = config.get("wandb_api_key")
         os.environ['WANDB_ENTITY'] = config.get("wandb_entity")
         os.environ['WANDB_PROJECT'] = config.get("wandb_project")
-        del config["wandb_api_key"]
-        del config["wandb_entity"]
-        del config["wandb_project"]
         p = Process(target=wandb_run, args=(config,))
     else:
         p = Process(target=run, args=(config, run_id, options.seed))

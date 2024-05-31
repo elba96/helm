@@ -17,6 +17,7 @@ def create_parser():
     parser.add_argument('--ckpt-path', type=str, required=True, help='Path to trained model')
     parser.add_argument('--random', action='store_true', help="Use random policy")
     parser.add_argument('--n_episodes', type=int, default=10, help="How many episodes to sample")
+    parser.add_argument('--n_layers', type=int, default=18, help="How many layers the TrXL has")
     return parser.parse_args()
 
 
@@ -30,6 +31,7 @@ def main():
     with open(config_file, 'r') as infile:
         ckpt_config = json.load(infile)
         ckpt_config['n_envs'] = 1
+        ckpt_config['n_layer'] = options.n_layers
 
     ckpt_file = [f for f in ckpt_files if '.pt' in f][0]
     ckpt = torch.load(ckpt_file)
